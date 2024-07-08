@@ -1,0 +1,9 @@
+cmake_minimum_required(VERSION 3.10)
+project(Datalogger)
+project(MultiProject)
+# 添加子目录
+add_subdirectory(client_socket)
+add_subdirectory(fileserver)
+add_subdirectory(fileclient)
+add_subdirectory(server_socket)
+add_executable(databag databag.c)
