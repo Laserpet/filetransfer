@@ -53,7 +53,7 @@ void receive_tar_file() {
 
     
     //检查磁盘空间是否满足要求
-    if(check_disk_space() ! = 0){
+    if(check_disk_space() != 0){
         perror("Disk Space not enough");
         
     }

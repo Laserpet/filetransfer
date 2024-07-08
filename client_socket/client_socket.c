@@ -53,10 +53,10 @@ int main(int argc, char *argv[]) {
 
     if (option == 1) {
         printf("Sending S1 message to port %d...\n", PORT_S1);
-        send_message("192.168.9.100", PORT_S1, "S1");
+        send_message("127.0.0.1", PORT_S1, "S1");
     } else if (option == 2) {
         printf("Sending S2 message to port %d...\n", PORT_S2);
-        send_message("192.168.9.100", PORT_S2, "S2");
+        send_message("127.0.0.1", PORT_S2, "S2");
     } else {
         fprintf(stderr, "Invalid option. Use 1 to send S1 message and 2 to send S2 message.\n");
         exit(EXIT_FAILURE);

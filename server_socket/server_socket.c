@@ -13,6 +13,7 @@
 #define BUFFER_SIZE 1024
 
 int databag_pid = 0;  // 用于存储 databag 进程的 PID
+char databag_path[BUFFER_SIZE] = "/default/path";  // 默认路径
 
 // 发送消息的函数
 void send_message(int sockfd, const char *message) {
@@ -46,8 +47,13 @@ void handle_s1(int sockfd) {
             printf("Starting databag process...\n");
             databag_pid = fork();
             if (databag_pid == 0) {
-                execl("/userdata/datalogger/databag", "databag", "record", "start", "--path", "/userdata/datalogger/tmp", (char *)NULL);
-                perror("execl failed");
+                //excelp 和excel有区别
+
+                char path_arg[BUFFER_SIZE];
+                snprintf(path_arg, BUFFER_SIZE, "--path=%s", databag_path);
+                //传递完整的路径参数 --path=xxxxx
+                execlp("databag", "databag", "record", "start", "-a", "--path=/userdata/zht/databag_tmp/",(char *)NULL);
+                perror("execlp failed");
                 exit(1);
             } else if (databag_pid < 0) {
                 perror("fork failed");
@@ -79,10 +85,9 @@ void handle_s2(int sockfd) {
         } else {
             printf("Handling S2 message.\n");
             send_message(sockfd, "S2_ACK");
-
             // 杀掉 databag 进程
-            printf("Killing databag process...\n");
-            kill(databag_pid, SIGTERM);
+            printf("Sending SIGINT to databag process\n");
+            kill(databag_pid, SIGINT);
             waitpid(databag_pid, NULL, 0);  // 等待子进程结束
             databag_pid = 0;
         }
@@ -91,7 +96,15 @@ void handle_s2(int sockfd) {
     close(sockfd);
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc > 1) {
+        strncpy(databag_path, argv[1], BUFFER_SIZE - 1);
+        databag_path[BUFFER_SIZE - 1] = '\0';
+    } else {
+        printf("Usage: %s <path>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
     int sockfd_s1, sockfd_s2, newsockfd_s1, newsockfd_s2;
     struct sockaddr_in server_addr_s1, server_addr_s2, client_addr_s1, client_addr_s2;
     socklen_t client_len_s1, client_len_s2;
