@@ -20,7 +20,10 @@ int check_disk_space(){
     return 0;
 }
 
-int receive_tar_file() {
+int receive_tar_file(char *argv[]) {
+    char *directory_path = argv[0];
+    char tmpfile[1024];
+    snprintf(tmpfile, sizeof(tmpfile), "%s/tmp.tar", directory_path);
     int sockfd, new_sockfd;
     struct sockaddr_in servaddr, cliaddr;
     socklen_t len = sizeof(cliaddr);
@@ -64,7 +67,7 @@ int receive_tar_file() {
         
     }
     // 打开文件以写入 tar 文件
-    fp = fopen(LOG_PATH, "wb");
+    fp = fopen(tmpfile, "wb");
     if (fp == NULL) {
         perror("fopen failed");
         close(new_sockfd);
@@ -96,14 +99,14 @@ int receive_tar_file() {
     tm_info = localtime(&t);
     printf("Changing File's name\n");
     strftime(timestamp, sizeof(timestamp), "%Y%m%d%H%M%S", tm_info);
-    snprintf(new_filename, sizeof(new_filename), "/userdata/domainlog/databaglog_%s.tar", timestamp);
+    snprintf(new_filename, sizeof(new_filename), "%s/databaglog_%s.tar", directory_path, timestamp);
 
     // 检查文件是否存在以及路径是否正确
-    if (access(LOG_PATH, F_OK) != 0) {
+    if (access(tmpfile, F_OK) != 0) {
         perror("File to rename does not exist");
     } else {
         // 尝试重命名文件
-        if (rename(LOG_PATH, new_filename) != 0) {
+        if (rename(tmpfile, new_filename) != 0) {
             perror("rename failed");
         } else {
             printf("Renamed tar file to: %s\n", new_filename);
@@ -200,7 +203,7 @@ int main(int argc, char *argv[]) {
         if(resp_ret == 1){
         //此时已收到过S1_ACK,因此等待文件传入。   
             printf("Waiting for fileServer connection start\n");
-            resp_ret = receive_tar_file();
+            resp_ret = receive_tar_file(directory_path);
         }
         //如果
         while(resp_ret == 0){
