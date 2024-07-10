@@ -8,7 +8,7 @@
 #include <fcntl.h>
 
 #define DUMMY_FILE "dummy.bin"
-#define MANIFEST_FILE "manifest.txt"
+#define MANIFEST_FILE "Manifest.bin"
 
 const char *databag_path;
 
@@ -22,7 +22,7 @@ void create_dummy_file(const char *path) {
         exit(1);
     }
     
-    const char *dummy_content = "This is a dummy binary file.";
+    const char *dummy_content = "This is a dummy binary file. Blablabla";
     write(fd, dummy_content, strlen(dummy_content));
     close(fd);
 }

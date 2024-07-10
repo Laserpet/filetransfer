@@ -39,8 +39,13 @@ int main(int argc, char *argv[]) {
             printf("Manifest.bin found, starting the process...\n");
             create_tar();
             send_tar_to_client();
+            printf("tar file sent. Work Done in this cycle \n");
+            char rm_command[BUFFER_SIZE];
+            snprintf(rm_command, BUFFER_SIZE, "rm -r %s/*", watch_dir);
+            system(rm_command);
+            printf("Removed all files in %s\n", watch_dir);
         } else {
-            printf("Manifest.bin not found, waiting...\n");
+            printf("%s/Manifest.bin not found, scanning...\n",manifest_path);
         }
         // 每隔2秒检查一次
         sleep(2);
@@ -66,8 +71,8 @@ void send_tar_to_client() {
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("socket creation failed");
-        // 错误计数器+1
-        error = error + 1;
+        error++;
+        return; // 出现错误时直接返回
     }
 
     servaddr.sin_family = AF_INET;
@@ -79,8 +84,8 @@ void send_tar_to_client() {
     if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
         perror("connect failed");
         close(sockfd);
-        // 错误计数器+1
-        error = error + 1;
+        error++;
+        return; // 出现错误时直接返回
     }
 
     FILE *tar_file_fp;
@@ -89,20 +94,21 @@ void send_tar_to_client() {
     // 打开 tar 文件
     printf("打开 tar 文件\n");
     tar_file_fp = fopen(tar_file, "rb");
-    printf("File opened\n");
     if (tar_file_fp == NULL) {
         perror("fopen failed");
         close(sockfd);
-        // 错误计数器+1
-        error = error + 1;
+        error++;
+        return; // 出现错误时直接返回
     }
 
     // 发送 tar 文件
     while ((n = fread(buffer, 1, BUFFER_SIZE, tar_file_fp)) > 0) {
         if (send(sockfd, buffer, n, 0) == -1) {
             perror("Error Sending File");
-            // 错误计数器+1
-            error = error + 10;
+            fclose(tar_file_fp);
+            close(sockfd);
+            error += 10;
+            return; // 出现错误时直接返回
         }
     }
 
@@ -110,13 +116,11 @@ void send_tar_to_client() {
     close(sockfd);
 
     // 删除原始文件
-    if(error == 0){
-    printf("tar file sent. Work Done in this cycle \n");
-    char rm_command[BUFFER_SIZE];
-    snprintf(rm_command, BUFFER_SIZE, "rm -r %s/*", watch_dir);
-    system(rm_command);
-    printf("Removed all files in %s\n", watch_dir);
+    if (error == 0) {
+        remove(tar_file); // 确保文件只在成功发送后删除
+        printf("Tar file sent and removed.\n");
     } else {
         error = 0;
+        printf("Error occurred. Tar file not removed.\n");
     }
 }
